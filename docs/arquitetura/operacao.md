@@ -31,6 +31,7 @@ Volumes:
 - `./data:/data` — o backend lê `/data/violencia_mg.db` (por isso `DB_PATH` é absoluto no container); `migrate` e `ingest` escrevem no mesmo diretório, montado em `/app/data`.
 - `./scripts:/app/scripts:ro` — os scripts Python entram nos containers de banco sem build.
 - `./frontend/public:/app/public:ro` (frontend) e `./frontend/public:/app/frontend/public` (ingest, gravável) — a malha GeoJSON é escrita pelo `sync_ibge_mg.py` e lida pelo Vite sem rebuild.
+- `./frontend/src` e `./frontend/index.html` — montados no container do Vite: editar o frontend reflete na hora (HMR), sem `--build`.
 
 `frontend` depende de `backend`; `backend` depende de `migrate` com
 `condition: service_completed_successfully` — a API nunca sobe contra um schema

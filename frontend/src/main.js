@@ -36,6 +36,24 @@ let geoLayer = null;
 let cachedMalha = null;
 let municipiosPorNome = new Map();
 let layersPorCodigo = new Map();
+let codigoSelecionado = null;
+let porCodigoAtual = new Map();
+
+function estiloMunicipio(feature) {
+  const cod = String(feature.properties?.codarea ?? "");
+  const registro = porCodigoAtual.get(cod);
+  const destacado = codigoSelecionado !== null && cod === codigoSelecionado;
+  return {
+    fillColor: corPorValor(registro),
+    fillOpacity: codigoSelecionado === null ? 0.85 : destacado ? 0.9 : 0.12,
+    weight: destacado ? 2.5 : 0.6,
+    color: destacado ? "#312e81" : "#ffffff",
+  };
+}
+
+function aplicarEstilos() {
+  if (geoLayer) geoLayer.eachLayer((l) => l.setStyle(estiloMunicipio(l.feature)));
+}
 
 function corPorValor(registro) {
   const metrica = registro?.taxa_100k ?? registro?.valor_absoluto;
@@ -140,7 +158,7 @@ async function atualizarMapa() {
     }
 
     const payload = await respApi.json();
-    const porCodigo = new Map(payload.itens.map((item) => [item.codigo_ibge, item]));
+    porCodigoAtual = new Map(payload.itens.map((item) => [item.codigo_ibge, item]));
     preencherBusca(payload.itens);
 
     if (geoLayer) {
@@ -149,25 +167,16 @@ async function atualizarMapa() {
     layersPorCodigo = new Map();
 
     geoLayer = L.geoJSON(malha, {
-      style: (feature) => {
-        const cod = String(feature.properties?.codarea ?? "");
-        const registro = porCodigo.get(cod);
-        return {
-          fillColor: corPorValor(registro),
-          weight: 0.6,
-          color: "#ffffff",
-          fillOpacity: 0.85,
-        };
-      },
+      style: estiloMunicipio,
       onEachFeature: (feature, layer) => {
         const cod = String(feature.properties?.codarea ?? "");
         layersPorCodigo.set(cod, layer);
-        const registro = porCodigo.get(cod);
+        const registro = porCodigoAtual.get(cod);
         const label = registro
           ? `${registro.nome} — ${registro.valor_absoluto ?? "sem dados"}`
           : `IBGE ${cod}`;
         layer.bindTooltip(label);
-        layer.on("click", () => carregarDetalhesMunicipio(cod));
+        layer.on("click", () => selecionarMunicipio(cod, false));
       },
     }).addTo(map);
 
@@ -179,14 +188,34 @@ async function atualizarMapa() {
   }
 }
 
+function selecionarMunicipio(cod, viaBusca) {
+  codigoSelecionado = cod;
+  aplicarEstilos();
+  if (viaBusca) {
+    const layer = layersPorCodigo.get(cod);
+    if (layer) {
+      map.fitBounds(layer.getBounds(), { maxZoom: 10 });
+    }
+  }
+  carregarDetalhesMunicipio(cod);
+}
+
 searchEl.addEventListener("change", () => {
   const cod = municipiosPorNome.get(searchEl.value.trim().toLowerCase());
   if (!cod) return;
-  const layer = layersPorCodigo.get(cod);
-  if (layer) {
-    map.fitBounds(layer.getBounds(), { maxZoom: 10 });
+  selecionarMunicipio(cod, true);
+});
+
+// limpar a busca volta ao mapa completo
+const painelInicialHTML = panelBodyEl.innerHTML;
+const painelInicialTitulo = panelTitleEl.textContent;
+searchEl.addEventListener("input", () => {
+  if (searchEl.value.trim() === "" && codigoSelecionado !== null) {
+    codigoSelecionado = null;
+    aplicarEstilos();
+    panelTitleEl.textContent = painelInicialTitulo;
+    panelBodyEl.innerHTML = painelInicialHTML;
   }
-  carregarDetalhesMunicipio(cod);
 });
 
 tipoEl.addEventListener("change", atualizarMapa);

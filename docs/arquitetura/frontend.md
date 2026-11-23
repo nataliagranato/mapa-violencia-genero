@@ -65,11 +65,28 @@ que o IBGE devolve no GeoJSON).
 
 | Ação | Efeito |
 |---|---|
-| Clique em município | `GET /api/municipio/{cod}` e preenche o painel lateral |
-| Troca de `select-tipo` / `select-ano` | `atualizarMapa()` (nova consulta + restyle) |
-| Busca (`input[list]` + `datalist`) | Resolve nome → código via `Map` normalizado em minúsculas, dá `fitBounds` no layer e abre o detalhe |
+| Clique em município | seleciona (destaca só ele) + `GET /api/municipio/{cod}` no painel lateral |
+| Busca (`input[list]` + `datalist`) | resolve nome → código, `fitBounds` no layer e seleciona |
+| Limpar o campo de busca | volta ao mapa completo (todos coloridos) e restaura o painel inicial |
+| Troca de `select-tipo` / `select-ano` | `atualizarMapa()` (nova consulta + restyle), **preservando** a seleção |
 | `Esc` ou botão "Saída rápida" | `window.location.replace()` para uma página neutra (previsão do tempo) |
 | Tooltip no hover | `Nome — valor_absoluto` ou `IBGE <código>` |
+
+### Seleção de município
+
+`codigoSelecionado` (ou `null`) é a única fonte de verdade do destaque. `estiloMunicipio()`
+lê esse estado e `aplicarEstilos()` reaplica em todas as camadas via `setStyle` — sem
+recriar o `L.geoJSON`:
+
+| Estado | Preenchimento | Borda |
+|---|---|---|
+| Nada selecionado | todos em `fillOpacity: 0.85`, escala normal | `0.6` branca |
+| Município selecionado | ele em `0.9`; os outros em `0.12` (esmaecidos, mas ainda clicáveis) | selecionado `2.5` `#312e81` |
+
+Motivo: com a taxa por 100 mil nula, todos os municípios aparecem com valor absoluto e
+o mapa vira ruído. Destacar um só responde "onde estou" sem esconder o contexto estadual.
+Os demais continuam visíveis e clicáveis de propósito — esconder ou bloquear obrigaria a
+limpar a busca para trocar de município.
 
 O painel monta HTML por template string com `innerHTML`: metadados, `<ul>` de
 série histórica (ano, tipo, valor, taxa, link da fonte) e rede de apoio quando
