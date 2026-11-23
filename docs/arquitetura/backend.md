@@ -32,16 +32,25 @@ DSN aplicado na abertura (`main.go:77`):
 
 ## Concorrência
 
-`db.SetMaxOpenConns(1)` (`main.go:84`) — **uma** conexão para o processo inteiro.
+`db.SetMaxOpenConns(1)` (`main.go:84`) — **uma** conexão simultânea por processo.
+`db.SetMaxIdleConns(0)` logo abaixo — nenhuma conexão fica ociosa entre requests.
 
 Justificativa: o SQLite em WAL aceita N leitores + 1 escritor, mas o escritor aqui é
-**outro processo** (`import_indicadores.py`). Limitar a API a uma conexão elimina
-contenção interna e torna previsível o comportamento quando a ingestão roda.
-Custo: requisições serializam no pool. Para 853 linhas por request e tráfego local,
-o throughput é dominado pela serialização JSON, não pelo pool.
+**outro processo** (`import_indicadores.py` / `sync_sejusp_mg.py`). Limitar a API a
+uma conexão elimina contenção interna e torna previsível o comportamento quando a
+ingestão roda. Custo: requisições serializam no pool. Para 853 linhas por request e
+tráfego local, o throughput é dominado pela serialização JSON, não pelo pool.
 
-`ponytail:` teto = serialização de leitura. Subir para N conexões quando houver
-tráfego concorrente real e a ingestão deixar de rodar com a API no ar.
+O `MaxIdleConns(0)` não é enfeite: quando o import fecha a última conexão, o SQLite
+faz checkpoint e recria o `-shm`. Uma conexão ociosa do Go continua apontando para o
+índice WAL antigo e **toda query passa a falhar** (`erro ao consultar mapa de MG`)
+até o processo reiniciar — sintoma silencioso, sem nada no log. Abrir/fechar por
+request custa microssegundos neste workload e elimina a classe inteira de bug, com
+a ingestão podendo rodar com a API no ar.
+
+`ponytail:` teto = serialização de leitura + open/close por query. Subir para N
+conexões e pool persistente quando houver tráfego concorrente real — e aí a ingestão
+precisa deixar de rodar com a API no ar, ou o banco precisa sair do SQLite.
 
 ## Endpoints
 

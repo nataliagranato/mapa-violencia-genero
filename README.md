@@ -19,31 +19,46 @@ segurança/privacidade (LGPD).
 
 ## Como rodar localmente
 
-### 1. Inicializar o banco SQLite
-```bash
-python3 scripts/init_db.py
-```
-
-### 2. Baixar os 853 municípios e a malha de MG (API do IBGE)
-```bash
-python3 scripts/sync_ibge_mg.py
-```
-Esse comando popula a tabela `municipios` via [API de Localidades do IBGE](https://servicodados.ibge.gov.br/api/docs/localidades) e baixa a malha simplificada para `frontend/public/malhas/mg_municipios.geojson` via [API de Malhas Geográficas do IBGE](https://servicodados.ibge.gov.br/api/docs/malhas?versao=3).
-
-### 3. Importar CSVs oficiais de Minas Gerais
-
-Atalho — baixa e importa os 22 CSVs do dataset SEJUSP-MG (2014–2026) de uma vez:
+### Via Docker (recomendado)
 
 ```bash
-python3 scripts/sync_sejusp_mg.py            # baixa o que falta em data/raw/ e importa
-python3 scripts/sync_sejusp_mg.py --refresh  # rebaixa todos
+docker compose up --build        # 1. migra o banco e sobe API + frontend
+docker compose run --rm ingest   # 2. baixa e importa os dados oficiais (só na 1ª vez)
 ```
 
-Depois de importar, reinicie o backend se ele já estava rodando:
-`docker compose restart backend` — em modo WAL, o processo Go fica preso ao
-`-shm` antigo quando outro processo (o import) fecha a última conexão.
+- Frontend: <http://localhost:5173>
+- API: <http://localhost:8080/api/health>
 
-Ou importe CSV a CSV (use `--dry-run` primeiro para validar):
+Dois serviços de ciclo curto cuidam do banco:
+
+| Serviço | Quando roda | O que faz |
+|---|---|---|
+| `migrate` | a cada `docker compose up` | aplica `data/schema.sql` + `data/seed_fontes_mg.sql` (idempotente); o `backend` só sobe depois que ele termina com sucesso |
+| `ingest` | sob demanda (`run --rm ingest`) | `sync_ibge_mg.py` (853 municípios + malha GeoJSON) e depois `sync_sejusp_mg.py` (22 CSVs, 2014–2026) |
+
+A ingestão fica fora do `up` de propósito: são ~133 MB de CSV e ~30 s de import. Rode de novo sempre que quiser atualizar os dados — **pode rodar com a stack no ar**, o backend não precisa de restart.
+
+Nenhum passo manual: não é preciso Python, `go mod tidy` nem `npm install` na máquina.
+
+### Sem Docker (desenvolvimento)
+
+Útil para editar o frontend com HMR nativo ou depurar o Go com `dlv`. Exige Python 3.10+, Go 1.22+ e Node 20+.
+
+```bash
+python3 scripts/init_db.py        # schema + seed de fontes
+python3 scripts/sync_ibge_mg.py   # 853 municípios (API de Localidades do IBGE) + malha GeoJSON
+python3 scripts/sync_sejusp_mg.py # baixa o que falta em data/raw/ e importa os 22 CSVs
+```
+
+```bash
+# terminal 1 — API
+cd backend && go mod tidy && go run .
+
+# terminal 2 — frontend (proxy /api → localhost:8080)
+cd frontend && npm install && npm run dev
+```
+
+Para importar CSV a CSV (use `--dry-run` primeiro para validar):
 
 ```bash
 # SEJUSP-MG — Feminicídio ou Violência Doméstica
@@ -62,23 +77,6 @@ python3 scripts/import_indicadores.py \
   --tipo violencia_saude \
   --dry-run
 ```
-
-### 4. Subir a API em Go
-```bash
-cd backend
-go mod tidy
-go run .
-```
-A API sobe em `http://localhost:8080`.
-
-### 5. Subir o frontend com Vite
-Em outro terminal:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-O Vite sobe em `http://localhost:5173` com proxy automático de `/api` para o backend em Go.
 
 ## Fontes oficiais de Minas Gerais
 

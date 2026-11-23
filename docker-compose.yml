@@ -1,4 +1,28 @@
 services:
+  # Migração: aplica data/schema.sql + data/seed_fontes_mg.sql (idempotente).
+  # Roda a cada `up` e sai; o backend só sobe depois que termina com sucesso.
+  migrate:
+    image: python:3.12-alpine
+    working_dir: /app
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./data:/app/data
+    command: ["python", "scripts/init_db.py"]
+    restart: "no"
+
+  # Ingestão sob demanda: docker compose run --rm ingest
+  # (baixa ~133 MB de CSVs + malha do IBGE — não roda no `up`)
+  ingest:
+    profiles: ["ingest"]
+    image: python:3.12-alpine
+    working_dir: /app
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./data:/app/data
+      - ./frontend/public:/app/frontend/public
+    command: ["sh", "-c", "python scripts/sync_ibge_mg.py && python scripts/sync_sejusp_mg.py"]
+    restart: "no"
+
   backend:
     build:
       context: ./backend
@@ -11,6 +35,9 @@ services:
       - ./data:/data
     ports:
       - "8080:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
     mem_limit: 128m
 

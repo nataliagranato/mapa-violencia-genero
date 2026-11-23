@@ -82,6 +82,10 @@ func main() {
 	defer db.Close()
 
 	db.SetMaxOpenConns(1)
+	// Não mantém conexão ociosa: se outro processo (import Python) fizer checkpoint
+	// do WAL, a conexão antiga fica com índice WAL obsoleto e toda query passa a
+	// falhar até reiniciar. Abrir/fechar por query custa microssegundos aqui.
+	db.SetMaxIdleConns(0)
 	if err := db.Ping(); err != nil {
 		log.Fatalf("erro ao conectar no SQLite (%s): %v", dbPath, err)
 	}
