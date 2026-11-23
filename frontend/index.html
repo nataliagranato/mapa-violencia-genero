@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mapa da Violência de Gênero — Minas Gerais</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <h1>Mapa da Violência de Gênero — Minas Gerais</h1>
+        <span class="badge">853 Municípios · ODS 16 · ODS 5</span>
+      </div>
+      <div class="safety-bar">
+        <a
+          class="btn-help"
+          href="https://www.gov.br/mulheres/pt-br/ligue180"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Precisa de ajuda? Ligue 180
+        </a>
+        <button id="quick-exit" class="btn-exit" type="button" title="Atalho: tecla Esc">
+          Saída rápida (Esc)
+        </button>
+      </div>
+    </header>
+
+    <section class="filters" aria-label="Filtros do mapa de Minas Gerais">
+      <label>
+        Indicador
+        <select id="select-tipo">
+          <option value="feminicidio">Feminicídio (SEJUSP-MG)</option>
+          <option value="violencia_domestica">Violência Doméstica (SEJUSP-MG)</option>
+          <option value="violencia_saude">Notificações de Saúde (SES-MG / SINAN)</option>
+          <option value="ligue_180">Ligue 180</option>
+        </select>
+      </label>
+      <label>
+        Ano
+        <select id="select-ano">
+          <option value="2026">2026</option>
+          <option value="2025" selected>2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+        </select>
+      </label>
+      <label>
+        Buscar município
+        <input id="search-municipio" type="search" placeholder="Ex.: Belo Horizonte" list="municipios-list" />
+        <datalist id="municipios-list"></datalist>
+      </label>
+      <p id="status-msg" class="status-msg">Carregando dados de Minas Gerais...</p>
+    </section>
+
+    <main class="layout">
+      <div id="map" role="region" aria-label="Mapa municipal de Minas Gerais"></div>
+      <aside class="panel">
+        <h2 id="panel-title">Selecione um município</h2>
+        <div id="panel-body">
+          <p>Clique em qualquer um dos 853 municípios mineiros (ou use a busca acima) para ver a série histórica e a rede de apoio cadastrada.</p>
+        </div>
+        <div class="methodology-note">
+          <strong>Nota sobre subnotificação:</strong>
+          Registros baixos ou zerados podem indicar subnotificação ou ausência de delegacia especializada (DEAM) no município, e não ausência de violência.
+        </div>
+      </aside>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

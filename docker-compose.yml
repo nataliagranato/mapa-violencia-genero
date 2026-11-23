@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mapa-mg-backend
+    environment:
+      - ADDR=:8080
+      - DB_PATH=/data/violencia_mg.db
+    volumes:
+      - ./data:/data
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    mem_limit: 128m
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mapa-mg-frontend
+    environment:
+      - VITE_API_TARGET=http://backend:8080
+    volumes:
+      - ./frontend/public:/app/public:ro
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    mem_limit: 256m

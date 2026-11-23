@@ -1,0 +1,5 @@
+-- Fontes oficiais abertas de Minas Gerais e federais
+INSERT OR IGNORE INTO fontes (slug, nome, orgao, url_oficial, data_atualizacao, nota_metodologica) VALUES
+  ('sejusp_mg', 'Violência contra Mulher — SEJUSP-MG', 'Secretaria de Estado de Justiça e Segurança Pública de Minas Gerais (SEJUSP)', 'https://dados.mg.gov.br/dataset/violencia-contra-mulher', NULL, 'Registros estatísticos de Violência Doméstica e Familiar contra a Mulher (2014–2026) e Vítimas de Feminicídio (2018–2026) em MG; sujeito a subnotificação em municípios sem DEAM.'),
+  ('ses_mg', 'Violência contra Mulheres — SES-MG (SINAN)', 'Secretaria de Estado de Saúde de Minas Gerais (SES-MG)', 'https://dados.mg.gov.br/dataset/violencia_ses', NULL, 'Notificações compulsórias de violência interpessoal na rede de saúde de MG, atualizadas semanalmente; inclui casos sem boletim de ocorrência.'),
+  ('ligue180', 'Painel de Dados do Ligue 180', 'Ministério das Mulheres', 'https://www.gov.br/mulheres/pt-br/ligue180/painel-de-dados', NULL, 'Denúncias e atendimentos telefônicos da Central de Atendimento à Mulher filtrados para Minas Gerais.');

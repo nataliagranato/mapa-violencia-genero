@@ -1,0 +1,23 @@
+# Banco local (regenerável: python3 scripts/init_db.py && python3 scripts/sync_sejusp_mg.py)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# CSVs brutos baixados da SEJUSP-MG (~133 MB) — regeneráveis via scripts/sync_sejusp_mg.py
+data/raw/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Node / Vite
+node_modules/
+frontend/dist/
+
+# Ambiente e editores
+.env
+.env.local
+.venv/
+.idea/
+.vscode/
+.DS_Store
